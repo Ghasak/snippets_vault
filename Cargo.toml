@@ -1,0 +1,12 @@
+[package]
+name = "snippets_vault"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4"        # For handling timestamps
+clap = "4.1"          # Command-line argument parsing
+colored = "2.0"       # Color-coded terminal output
+subprocess = "0.2.9"    # For executing system commands
+shellexpand  = "3.1.0"
+
