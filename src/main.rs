@@ -11,6 +11,9 @@ const SNIPPET_DIR: &str = "Documents/myObsidianDoc/mysnippetsCollection";
 
 /// Entry point of the application.
 /// Defines available subcommands and routes the input to appropriate handlers.
+///
+///
+///
 fn main() {
     let matches = Command::new("SnippetsVault")
         .version("0.1.0")
@@ -26,6 +29,11 @@ fn main() {
         .subcommand(Command::new("--edit_snippet").about("Edit a snippet using fuzzy finder"))
         .subcommand(Command::new("--version").about("Show version information"))
         .subcommand(Command::new("--languages").about("Show supported languages"))
+        .subcommand(
+            Command::new("--find_in_files")
+                .about("Search for a string in files and preview results with fuzzy finder")
+                .arg(Arg::new("search_term").required(true)),
+        )
         .after_help(
             r#"
 NOTES:
@@ -49,11 +57,10 @@ NOTES:
  mp3, wav, or flac would look like this:
  ^music mp3 | wav | flac
  LINK: https://betterprogramming.pub/boost-your-command-line-productivity-with-fuzzy-finder-985aa162ba5d#c4fb
-"#
-        )
+"#)
+
         .get_matches();
 
-    // Global timestamp for snippet naming
     let timestamp = Local::now().format("%Y-%m-%d-%H%M%S").to_string();
 
     match matches.subcommand() {
@@ -72,6 +79,10 @@ NOTES:
         }
         Some(("--edit_snippet", _)) => {
             edit_snippet();
+        }
+        Some(("--find_in_files", sub_matches)) => {
+            let search_term = sub_matches.get_one::<String>("search_term").unwrap();
+            find_in_files(search_term);
         }
         Some(("--version", _)) => {
             println!("{}", "SnippetVault Version: 0.1.0".green());
@@ -182,6 +193,44 @@ fn edit_snippet() {
 
         if !status.success() {
             println!("{} Failed to edit snippets.", "✘".red());
+        }
+    } else {
+        println!("{} Snippet directory does not exist.", "✘".red());
+    }
+}
+
+/// Searches for a string in files within the snippet directory, previews results using `rg` and `fzf`,
+/// and opens the selected file in `nvim`.
+/// - `search_term`: The string to search for in the files.
+fn find_in_files(search_term: &str) {
+    let home_dir = env::var("HOME").unwrap();
+    let snippet_dir = format!("{}/{}", home_dir, SNIPPET_DIR);
+    let editor = get_default_editor();
+
+    if Path::new(&snippet_dir).exists() {
+        // Delegate the functionality to a shell script using `rg`, `fzf`, and `nvim`
+        let args = format!(
+            r#"
+                cd "{}" &&
+                rg --files-with-matches --no-messages '{}' |
+                fzf --sort --preview-window down:80%:wrap --preview "rg --ignore-case --pretty --context 10 --colors 'match:bg:red' --colors 'match:fg:white' '{}' {{}}" |
+                xargs -r {}
+                "#,
+            snippet_dir, search_term, search_term, editor
+        );
+
+        let status = ProcessCommand::new("bash")
+            .arg("-c")
+            .arg(args)
+            .status()
+            .expect("Failed to execute search and open command");
+
+        if !status.success() {
+            println!(
+                "{} Failed to find or open files with the term '{}'.",
+                "✘".red(),
+                search_term
+            );
         }
     } else {
         println!("{} Snippet directory does not exist.", "✘".red());
