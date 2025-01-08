@@ -16,7 +16,7 @@ const SNIPPET_DIR: &str = "Documents/myObsidianDoc/mysnippetsCollection";
 ///
 fn main() {
     let matches = Command::new("SnippetsVault")
-        .version("0.1.0")
+        .version("0.2.0")
         .author("Ghasak Ibrahim")
         .about("A secure and organized vault for managing your code snippets")
         .subcommand(
@@ -85,7 +85,7 @@ NOTES:
             find_in_files(search_term);
         }
         Some(("--version", _)) => {
-            println!("{}", "SnippetVault Version: 0.1.0".green());
+            println!("{}", "SnippetVault Version: 0.2.0".green());
         }
         Some(("--languages", _)) => {
             list_languages();
