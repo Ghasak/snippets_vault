@@ -110,25 +110,29 @@ fn create_snippet(language: &str, tags: &[&str], timestamp: &str) {
         println!("{} Directory created: {}", "✔".green(), snippet_dir);
     }
 
-    let tags_str = tags.join("::");
-    let filename = format!("{}/snippet_{}_{}.md", snippet_dir, timestamp, language);
+    // Combine all arguments for the filename, including language and tags
+    let mut filename_parts = vec![timestamp.to_string(), language.to_string()];
+    filename_parts.extend(tags.iter().map(|tag| tag.to_string()));
 
+    let filename = format!("{}/snippet_{}.md", snippet_dir, filename_parts.join("_"));
+
+    // Format the content with the language and tags
     let content = format!(
         "# Title: {} - Snippet\n# ---\n### Tags: {}\n\n### Content\n\n```{}\n\n```\n### Link:\n### Note:\n",
-        language, tags_str, language
+        language, tags.join(", "), language
     );
 
+    // Write the snippet content to the file
     fs::write(&filename, content).unwrap();
     println!("{} Snippet created: {}", "✔".green(), filename);
 
-    // Open the file in nvim
+    // Open the file in the default editor
     let editor = get_default_editor();
     let _ = ProcessCommand::new(editor).arg(&filename).status();
 
     // Preview the file using glow
     let _ = ProcessCommand::new("glow").arg(&filename).status();
 }
-
 /// Lists all snippets using fuzzy search and preview tools.
 fn list_snippets() {
     let home_dir = env::var("HOME").unwrap();
